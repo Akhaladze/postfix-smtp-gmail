@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   postfix-relay:
-    image: akhaladze/postfix-gmail:v1.0.0
+    image: akhaladze/postfix-gmail:latest
     container_name: postfix-smtp-gmail
     restart: unless-stopped
     ports:

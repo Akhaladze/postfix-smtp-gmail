@@ -1,18 +1,23 @@
 #!/bin/sh
 
+# Compile aliases database to prevent startup warnings
+newaliases
+
 # Configure Postfix with environment variables
 postconf -e "relayhost = [smtp.gmail.com]:587"
 postconf -e "mynetworks = 127.0.0.0/8, ${MYNETWORKS}"
 postconf -e "smtp_sasl_auth_enable = yes"
-postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
+
+# Use lmdb instead of hash (Alpine default database format)
+postconf -e "smtp_sasl_password_maps = lmdb:/etc/postfix/sasl_passwd"
 postconf -e "smtp_sasl_security_options = noanonymous"
 postconf -e "smtp_tls_security_level = encrypt"
 postconf -e "smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt"
 
-# Set up SASL credentials
+# Set up SASL credentials using lmdb format explicitly
 echo "[smtp.gmail.com]:587 ${SMTP_USERNAME}:${SMTP_PASSWORD}" > /etc/postfix/sasl_passwd
-postmap /etc/postfix/sasl_passwd
-chmod 0600 /etc/postfix/sasl_passwd /etc/postfix/sasl_passwd.db
+postmap lmdb:/etc/postfix/sasl_passwd
+chmod 0600 /etc/postfix/sasl_passwd*
 
 # Configure canonical mapping to rewrite all recipients to TARGET_EMAIL
 echo "/.+/ ${TARGET_EMAIL}" > /etc/postfix/recipient_canonical
@@ -24,3 +29,4 @@ postconf -e "maillog_file = /dev/stdout"
 
 # Start Postfix in the foreground
 exec postfix start-fg
+
